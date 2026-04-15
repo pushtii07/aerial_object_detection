@@ -2,12 +2,16 @@ import streamlit as st
 import numpy as np
 import cv2
 from PIL import Image
+import tensorflow as tf
 from tensorflow.keras.models import load_model
 from ultralytics import YOLO
 
 # Load models
-cnn_model = load_model("mobilenetv2_aerial_model.h5", compile=False, safe_mode=False)
+model = load_model("mobilenetv2_aerial_model.h5")
+model.save("mobilenetv2_fixed.keras")
 yolo_model = YOLO("best.pt")
+
+
 
 st.title("Aerial Object Classification and Detection")
 st.write("Upload an aerial image to classify or detect objects.")
