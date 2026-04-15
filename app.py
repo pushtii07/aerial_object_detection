@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 import cv2
 from PIL import Image
-from tensorflow.keras.models import load_model
+from keras.models import load_model
 from ultralytics import YOLO
 
 # Load models
