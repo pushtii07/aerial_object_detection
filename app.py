@@ -6,7 +6,7 @@ from tensorflow.keras.models import load_model
 from ultralytics import YOLO
 
 # Load models
-cnn_model = load_model("mobilenetv2_aerial_model.h5", compile=False)
+cnn_model = load_model("mobilenetv2_aerial_model.h5", compile=False, safe_mode=False)
 yolo_model = YOLO("best.pt")
 
 st.title("Aerial Object Classification and Detection")
