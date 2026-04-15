@@ -7,8 +7,7 @@ from tensorflow.keras.models import load_model
 from ultralytics import YOLO
 
 # Load models
-model = load_model("mobilenetv2_aerial_model.h5")
-model.save("mobilenetv2_fixed.keras")
+cnn_model = load_model("mobilenetv2_fixed.keras")
 yolo_model = YOLO("best.pt")
 
 
