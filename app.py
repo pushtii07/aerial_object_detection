@@ -2,12 +2,10 @@ import streamlit as st
 import numpy as np
 import cv2
 from PIL import Image
-import tensorflow as tf
-from tensorflow.keras.models import load_model
 from ultralytics import YOLO
 
 # Load models
-cnn_model = load_model("mobilenetv2_fixed.keras")
+
 yolo_model = YOLO("best.pt")
 
 
