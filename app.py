@@ -40,15 +40,24 @@ cnn_model.eval()
 
 # ---------------- YOLO MODEL ----------------
 # You must have a YOLO weights file OR use pretrained
-yolo_model = YOLO("yolov8n.pt")   # lightweight pretrained model
+import numpy as np
+from ultralytics import YOLO
 
-# ---------------- TRANSFORM ----------------
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor()
-])
+@st.cache_resource
+def load_yolo():
+    return YOLO("yolov8n.pt")
 
-labels = ["Class 0", "Class 1"]
+yolo_model = load_yolo()
+
+st.subheader("🎯 YOLO Detection")
+
+img_np = np.array(image)
+
+results = yolo_model(img_np)
+
+annotated_img = results[0].plot()
+
+st.image(annotated_img, use_container_width=True)
 
 # ---------------- UI ----------------
 uploaded_file = st.file_uploader("Upload Image", type=["jpg", "jpeg", "png"])
