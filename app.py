@@ -1,48 +1,47 @@
 import streamlit as st
 import numpy as np
-import cv2
 from PIL import Image
 from ultralytics import YOLO
 
-# Load models
+# ---------------- PAGE SETUP ----------------
+st.set_page_config(page_title="Aerial Detection System", layout="centered")
 
-yolo_model = YOLO("best.pt")
+st.title("🛰 Aerial Object Detection System")
+st.write("Upload an image and choose a model to run inference.")
 
-
-
-st.title("Aerial Object Classification and Detection")
-st.write("Upload an aerial image to classify or detect objects.")
-
-uploaded_file = st.file_uploader("Upload Image", type=["jpg","png","jpeg"])
-
-task = st.radio(
-    "Select Task",
-    ["Bird vs Drone Classification", "Object Detection"]
+# ---------------- MODEL SELECTION (CENTERED UI) ----------------
+model_choice = st.selectbox(
+    "Choose Model",
+    ["Object Detection (YOLO)"]
 )
+
+# ---------------- LOAD YOLO MODEL ----------------
+@st.cache_resource
+def load_model():
+    return YOLO("best.pt")
+
+yolo_model = load_model()
+
+# ---------------- IMAGE UPLOAD ----------------
+uploaded_file = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"])
 
 if uploaded_file is not None:
 
-    image = Image.open(uploaded_file)
-    st.image(image, caption="Uploaded Image", use_container_width=True)
+    image = Image.open(uploaded_file).convert("RGB")
+
+    # Show smaller input image
+    st.image(image, caption="Uploaded Image", width=300)
 
     img = np.array(image)
 
-    if task == "Bird vs Drone Classification":
-
-        img_resized = cv2.resize(img, (224,224))
-        img_resized = img_resized / 255.0
-        img_resized = np.expand_dims(img_resized, axis=0)
-
-        prediction = cnn_model.predict(img_resized)[0][0]
-
-        if prediction > 0.5:
-            st.success("Prediction: Drone 🚁")
-        else:
-            st.success("Prediction: Bird 🐦")
-
-    if task == "Object Detection":
+    # ---------------- OBJECT DETECTION ----------------
+    if model_choice == "Object Detection (YOLO)":
 
         results = yolo_model(img)
+
         result_img = results[0].plot()
 
-        st.image(result_img, caption="Detection Result", use_container_width=True)
+        st.subheader("Detection Result")
+
+        # Resize output for clean UI
+        st.image(result_img, width=400)
