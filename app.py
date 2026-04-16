@@ -1,91 +1,48 @@
 import streamlit as st
-import torch
-import torch.nn as nn
+import numpy as np
+import cv2
 from PIL import Image
 from ultralytics import YOLO
-import numpy as np
-import torchvision.transforms as transforms
 
-# ---------------- PAGE ----------------
-st.title("🛰 Aerial Detection: YOLO + CNN Hybrid")
+# Load models
 
-# ---------------- CNN MODEL ----------------
-class CNN(nn.Module):
-    def __init__(self):
-        super(CNN, self).__init__()
-
-        self.features = nn.Sequential(
-            nn.Conv2d(3, 16, 3, 1, 1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-
-            nn.Conv2d(16, 32, 3, 1, 1),
-            nn.ReLU(),
-            nn.MaxPool2d(2)
-        )
-
-        self.classifier = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(32 * 56 * 56, 128),
-            nn.ReLU(),
-            nn.Linear(128, 2)
-        )
-
-    def forward(self, x):
-        return self.classifier(self.features(x))
+yolo_model = YOLO("best.pt")
 
 
-cnn_model = CNN()
-cnn_model.eval()
 
-# ---------------- YOLO MODEL ----------------
-# You must have a YOLO weights file OR use pretrained
-import numpy as np
-from ultralytics import YOLO
+st.title("Aerial Object Classification and Detection")
+st.write("Upload an aerial image to classify or detect objects.")
 
-@st.cache_resource
-def load_yolo():
-    return YOLO("yolov8n.pt")
+uploaded_file = st.file_uploader("Upload Image", type=["jpg","png","jpeg"])
 
-yolo_model = load_yolo()
+task = st.radio(
+    "Select Task",
+    ["Bird vs Drone Classification", "Object Detection"]
+)
 
-st.subheader("🎯 YOLO Detection")
+if uploaded_file is not None:
 
-img_np = np.array(image)
+    image = Image.open(uploaded_file)
+    st.image(image, caption="Uploaded Image", use_container_width=True)
 
-results = yolo_model(img_np)
+    img = np.array(image)
 
-annotated_img = results[0].plot()
+    if task == "Bird vs Drone Classification":
 
-st.image(annotated_img, use_container_width=True)
+        img_resized = cv2.resize(img, (224,224))
+        img_resized = img_resized / 255.0
+        img_resized = np.expand_dims(img_resized, axis=0)
 
-# ---------------- UI ----------------
-uploaded_file = st.file_uploader("Upload Image", type=["jpg", "jpeg", "png"])
+        prediction = cnn_model.predict(img_resized)[0][0]
 
-if uploaded_file:
-    image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Input Image", use_container_width=True)
+        if prediction > 0.5:
+            st.success("Prediction: Drone 🚁")
+        else:
+            st.success("Prediction: Bird 🐦")
 
-    # ================= CNN PREDICTION =================
-    img_tensor = transform(image).unsqueeze(0)
+    if task == "Object Detection":
 
-    with torch.no_grad():
-        cnn_output = cnn_model(img_tensor)
-        cnn_pred = torch.argmax(cnn_output, dim=1).item()
+        results = yolo_model(img)
+        result_img = results[0].plot()
 
-    st.subheader("🧠 CNN Prediction")
-    st.success(labels[cnn_pred])
-
-    # ================= YOLO PREDICTION =================
-    st.subheader("🎯 YOLO Detection")
-
-    # convert PIL → numpy (NO cv2 used)
-    img_np = np.array(image)
-
-    results = yolo_model(img_np)
-
-    # show results image (Ultralytics handles rendering)
-    for r in results:
-        annotated_img = r.plot()
-
-    st.image(annotated_img, caption="YOLO Detection Result", use_container_width=True)
+        st.image(result_img, caption="Detection Result", use_container_width=True)
