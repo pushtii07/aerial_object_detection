@@ -8,7 +8,7 @@ from tensorflow.keras.models import load_model
 st.title("Aerial Object Classification and Detection")
 
 # Load models
-cnn_model = load_model("cnn_model.keras")
+cnn_model = load_model("cnn_model.keras", compile=False, safe_mode=False)
 yolo_model = YOLO("best.pt")
 
 task = st.radio(
