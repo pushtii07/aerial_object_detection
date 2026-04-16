@@ -1,48 +1,59 @@
 import streamlit as st
-import numpy as np
-import cv2
+import torch
+import torch.nn as nn
 from PIL import Image
-from ultralytics import YOLO
-from tensorflow.keras.models import load_model
+import torchvision.transforms as transforms
 
-st.title("Aerial Object Classification and Detection")
+# ---------------- MODEL ----------------
+class CNN(nn.Module):
+    def __init__(self):
+        super(CNN, self).__init__()
+        self.conv = nn.Sequential(
+            nn.Conv2d(3, 16, 3, 1, 1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
 
-# Load models
-cnn_model = load_model("cnn_model.keras", compile=False, safe_mode=False)
-yolo_model = YOLO("best.pt")
+            nn.Conv2d(16, 32, 3, 1, 1),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
 
-task = st.radio(
-    "Select Task",
-    ["Bird vs Drone Classification", "Object Detection"]
-)
+        self.fc = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(32 * 56 * 56, 128),
+            nn.ReLU(),
+            nn.Linear(128, 2)
+        )
 
-uploaded_file = st.file_uploader("Upload Image", type=["jpg","jpeg","png"])
+    def forward(self, x):
+        return self.fc(self.conv(x))
 
-if uploaded_file is not None:
 
-    image = Image.open(uploaded_file)
-    img = np.array(image)
+# load model
+model = CNN()
+model.load_state_dict(torch.load("model.pth", map_location="cpu"))
+model.eval()
 
-    st.image(image, caption="Uploaded Image")
+# ---------------- UI ----------------
+st.title("Aerial Image Classification (PyTorch CNN)")
 
-    if task == "Bird vs Drone Classification":
+upload = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"])
 
-        img_resized = cv2.resize(img, (128,128))
-        img_resized = img_resized / 255.0
-        img_resized = np.expand_dims(img_resized, axis=0)
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor()
+])
 
-        prediction = cnn_model.predict(img_resized)
+labels = ["Class 0", "Class 1"]  # change this
 
-        class_names = ["Bird","Drone"]
+if upload:
+    img = Image.open(upload).convert("RGB")
+    st.image(img, caption="Uploaded Image")
 
-        predicted_class = class_names[np.argmax(prediction)]
+    img = transform(img).unsqueeze(0)
 
-        st.success(f"Prediction: {predicted_class}")
+    with torch.no_grad():
+        output = model(img)
+        pred = torch.argmax(output, 1).item()
 
-    elif task == "Object Detection":
-
-        results = yolo_model(img)
-
-        result_img = results[0].plot()
-
-        st.image(result_img, caption="Detection Result")
+    st.success(f"Prediction: {labels[pred]}")
