@@ -12,7 +12,8 @@ st.write("Upload an image and choose a model to run inference.")
 # ---------------- MODEL SELECTION (CENTERED UI) ----------------
 model_choice = st.selectbox(
     "Choose Model",
-    ["Object Detection (YOLO)"]
+    ["Object Detection (YOLO)",
+    "CNN Classification (CNN)"]
 )
 
 # ---------------- LOAD YOLO MODEL ----------------
